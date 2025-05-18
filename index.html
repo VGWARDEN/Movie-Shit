@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Movie Streaming</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .movie-btn.active {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 0 10px #2563eb88;
+      transform: scale(1.05);
+    }
+
+    .movie-btn {
+      transition: all 0.2s ease-in-out;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .fade-in {
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    /* Spinner style */
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.15);
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-white min-h-screen flex flex-col items-center p-6">
+
+  <h1 class="text-5xl font-black mb-10 text-center drop-shadow-xl tracking-tight">🎬 Movie Streaming</h1>
+
+  <!-- Movie Selector -->
+  <div id="movieSelector" class="glass rounded-2xl px-8 py-6 flex flex-wrap justify-center gap-4 mb-10 shadow-xl max-w-4xl w-full">
+    <button class="movie-btn bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-semibold text-sm shadow-md active" data-id="1dDC5MWaN8Cr3XeUroHTMQJtYFF8jzM2O">Family Star</button>
+    <button class="movie-btn bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-semibold text-sm shadow-md" data-id="1rcYXclZcZjAiyYWnFGxc3SlULJiJppc2">MAD 2</button>
+    <button class="movie-btn bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-semibold text-sm shadow-md" data-id="1Vxlpgu6lwZhZ1FJHpe1JVpc9swOZJjqi">HIT 3</button>
+    <button class="movie-btn bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-semibold text-sm shadow-md" data-id="1eg1SPel9KRpn_7V-qtRKGBicQpFA7wjF">Agnyathaavaasi</button>
+  </div>
+
+  <!-- Iframe container -->
+  <div class="relative w-full max-w-6xl aspect-video rounded-3xl overflow-hidden shadow-2xl group transition-all duration-500">
+    <iframe
+      id="videoIframe"
+      src="https://drive.google.com/file/d/1dDC5MWaN8Cr3XeUroHTMQJtYFF8jzM2O/preview"
+      allow="autoplay; fullscreen"
+      class="w-full h-full rounded-3xl cursor-pointer fade-in"
+    ></iframe>
+
+    <div class="spinner" id="spinner"></div>
+
+    <div class="absolute bottom-4 right-4 text-xs text-white bg-black bg-opacity-50 px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      ⏯️ Double-click to fullscreen
+    </div>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('.movie-btn');
+    const iframe = document.getElementById('videoIframe');
+    const spinner = document.getElementById('spinner');
+
+    // Preload iframe cache object
+    const iframeCache = {};
+
+    // Preload function returns a Promise
+    function preloadVideo(fileId) {
+      return new Promise((resolve) => {
+        if (iframeCache[fileId]) {
+          resolve();
+          return;
+        }
+        const tempIframe = document.createElement('iframe');
+        tempIframe.style.display = 'none';
+        tempIframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+        document.body.appendChild(tempIframe);
+        tempIframe.onload = () => {
+          iframeCache[fileId] = true;
+          document.body.removeChild(tempIframe);
+          resolve();
+        };
+      });
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const fileId = btn.getAttribute('data-id');
+
+        if (iframe.src.includes(fileId)) {
+          return; // Already playing this video
+        }
+
+        // Show spinner & fade out iframe
+        spinner.style.display = 'block';
+        iframe.classList.remove('fade-in');
+        iframe.classList.add('fade-out');
+
+        // Preload video
+        await preloadVideo(fileId);
+
+        // Switch iframe source after preload
+        iframe.onload = () => {
+          iframe.classList.remove('fade-out');
+          iframe.classList.add('fade-in');
+          spinner.style.display = 'none';
+        };
+        iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+
+        // Update active button
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // Fullscreen on double-click
+    iframe.addEventListener('dblclick', () => {
+      if (iframe.requestFullscreen) iframe.requestFullscreen();
+      else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+      else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+    });
+  </script>
+
+</body>
+</html>
